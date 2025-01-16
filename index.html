@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Web App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+        .chatbox {
+            width: 300px;
+            height: 400px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: scroll;
+            background-color: white;
+            border-radius: 5px;
+        }
+        .input-box {
+            width: 300px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chatbox" id="chatbox"></div>
+    <input type="text" id="userInput" class="input-box" placeholder="Type a message" onkeydown="handleKeyPress(event)">
+    <script src="https://cdn.sendbird.com/js/sendbird.min.js"></script>
+    <script>
+        const APP_ID = 'BF738831-5030-460B-9891-AC5446AAE79C';
+        const sb = new SendBird({ appId: APP_ID });
+
+        sb.connect('user1', function(user, error) {
+            if (error) {
+                console.error('Connection failed:', error);
+                return;
+            }
+            console.log(`${user.nickname} connected`);
+        });
+
+        function sendMessage(message) {
+            sb.GroupChannel.createChannel([ 'user1' ], function(channel, error) {
+                if (error) {
+                    console.error('Channel creation failed:', error);
+                    return;
+                }
+                console.log('Channel created:', channel.url);
+
+                channel.sendUserMessage(message, function(msg, error) {
+                    if (error) {
+                        console.error('Message send failed:', error);
+                    } else {
+                        displayMessage(msg.message, 'user');
+                        speakText(msg.message);
+                    }
+                });
+            });
+        }
+
+        function displayMessage(message, sender) {
+            const chatbox = document.getElementById('chatbox');
+            const messageElement = document.createElement('div');
+            messageElement.textContent = sender + ': ' + message;
+            chatbox.appendChild(messageElement);
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }
+
+        function speakText(text) {
+            const speech = new SpeechSynthesisUtterance(text);
+            speech.lang = 'en-US';
+            window.speechSynthesis.speak(speech);
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                const userInput = document.getElementById('userInput').value;
+                displayMessage(userInput, 'You');
+                sendMessage(userInput);
+                document.getElementById('userInput').value = '';
+            }
+        }
+    </script>
+</body>
+</html>
